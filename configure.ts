@@ -12,6 +12,17 @@
 |
 */
 
-import ConfigureCommand from '@adonisjs/core/commands/configure'
+import Configure from '@adonisjs/core/commands/configure'
+import { stubsRoot } from './stubs/main.js'
 
-export async function configure(_command: ConfigureCommand) {}
+export async function configure(command: Configure) {
+  const codemods = await command.createCodemods()
+
+  // Publish config file
+  await codemods.makeUsingStub(stubsRoot, 'config/apollo.stub', {})
+
+  // Add provider to rc file
+  await codemods.updateRcFile((rcFile) => {
+    rcFile.addProvider('@omakei/adonisjs-apollo/apollo_provider')
+  })
+}

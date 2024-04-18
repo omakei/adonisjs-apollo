@@ -1,0 +1,16 @@
+{{{
+  exports({ to: app.configPath('apollo.ts') })
+}}}
+import { defineConfig } from '@omakei/adonisjs-apollo'
+
+export default defineConfig({
+  schemas: 'app/schemas',
+  resolvers: 'app/resolvers',
+  path: '/graphql',
+  context({ ctx }) {
+    return {};
+  },
+  executableSchema: {
+    inheritResolversFromInterfaces: true,
+  },
+})
