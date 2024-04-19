@@ -87,14 +87,13 @@ export default class ApolloServer<ContextType extends BaseContext = BaseContext>
     })
   }
 
-  applyMiddleware(): void {
-    this.$app.container.resolving('router', (router) => {
-      router.get(this.$path, this.getGraphqlHandler())
-      const postRoute = router.post(this.$path, this.getGraphqlHandler())
-      if (this.$enableUploads) {
-        postRoute.middleware(this.getUploadsMiddleware())
-      }
-    })
+  async applyMiddleware(): Promise<void> {
+    const router = await this.$app.container.make('router')
+    router.get(this.$path, this.getGraphqlHandler())
+    const postRoute = router.post(this.$path, this.getGraphqlHandler())
+    if (this.$enableUploads) {
+      postRoute.use(this.getUploadsMiddleware())
+    }
   }
 
   getGraphqlHandler() {

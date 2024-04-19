@@ -43,7 +43,7 @@ test.group('getTypeDefsAndResolvers', () => {
 })
 
 test.group('printWarnings', () => {
-  test('should print warnings using the logger', ({ expect }) => {
+  test('should print warnings using the logger', () => {
     const logger = getFakeLogger()
     printWarnings(
       {
@@ -60,7 +60,7 @@ test.group('printWarnings', () => {
     // )
   })
 
-  test('should print nothing if there are no warnings', ({ expect }) => {
+  test('should print nothing if there are no warnings', () => {
     const logger = getFakeLogger()
     printWarnings({ missingMutation: [], missingQuery: [], missingScalars: [] }, logger)
     // expect(logger.logs).toHaveLength(0)

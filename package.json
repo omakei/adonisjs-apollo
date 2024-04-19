@@ -1,7 +1,7 @@
 {
   "name": "@omakei/adonisjs-apollo",
   "description": "GraphQL apollo server integration for adonisjs v6",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "engines": {
     "node": ">=20.6.0"
   },
