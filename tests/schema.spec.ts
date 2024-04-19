@@ -4,6 +4,7 @@ import { Logger } from '@adonisjs/core/logger'
 import { Kind } from 'graphql'
 import { getTypeDefsAndResolvers, printWarnings } from '../src/schema.js'
 import app from '@adonisjs/core/services/app'
+import sinon from 'sinon'
 
 import { fileURLToPath } from 'node:url'
 
@@ -32,6 +33,7 @@ test.group('getTypeDefsAndResolvers', () => {
   })
 
   test('should merge resolvers', ({ expect }) => {
+    console.log(JSON.stringify(result.resolvers), 'omakei')
     expect(Object.keys(result.resolvers)).toStrictEqual(['Query', 'Mutation', 'D', 'URL'])
   })
 
@@ -43,8 +45,10 @@ test.group('getTypeDefsAndResolvers', () => {
 })
 
 test.group('printWarnings', () => {
-  test('should print warnings using the logger', () => {
+  test('should print warnings using the logger', ({ expect }) => {
     const logger = getFakeLogger()
+    const spy = sinon.spy()
+
     printWarnings(
       {
         missingMutation: ['A', 'B'],
@@ -53,17 +57,22 @@ test.group('printWarnings', () => {
       },
       logger
     )
-    // expect(logger.logs[0].msg).toBe('GraphQL Query resolver missing for fields: X, Y')
+    spy(logger, 'error')
+    console.log(JSON.stringify(spy.getCall(0).args[1]), 'omakei spy')
+    expect(spy.args(['GraphQL Query resolver missing for fields: X, Y'])).toBe(true)
     // expect(logger.logs[1].msg).toBe('GraphQL Mutation resolver missing for fields: A, B')
     // expect(logger.logs[2].msg).toBe(
     //   'GraphQL scalar types defined in schema but not in resolvers: S, T'
     // )
   })
 
-  test('should print nothing if there are no warnings', () => {
+  test('should print nothing if there are no warnings', ({ expect }) => {
     const logger = getFakeLogger()
+    const spy = sinon.spy()
+    spy(logger, 'error')
+
     printWarnings({ missingMutation: [], missingQuery: [], missingScalars: [] }, logger)
-    // expect(logger.logs).toHaveLength(0)
+    expect(spy.callCount).toEqual(1)
   })
 })
 
