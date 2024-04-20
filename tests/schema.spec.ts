@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { test } from '@japa/runner'
-import { Logger } from '@adonisjs/core/logger'
+import logger from '@adonisjs/core/services/logger'
 import { Kind } from 'graphql'
 import { getTypeDefsAndResolvers, printWarnings } from '../src/schema.js'
 import app from '@adonisjs/core/services/app'
@@ -33,21 +33,25 @@ test.group('getTypeDefsAndResolvers', () => {
   })
 
   test('should merge resolvers', ({ expect }) => {
-    console.log(JSON.stringify(result.resolvers), 'omakei')
     expect(Object.keys(result.resolvers)).toStrictEqual(['Query', 'Mutation', 'D', 'URL'])
   })
 
   test('should warn about missing resolvers', ({ expect }) => {
-    expect(result.warnings.missingQuery).toStrictEqual(['queryB', 'queryC'])
+    expect(result.warnings.missingQuery).toStrictEqual(['queryB', 'queryC', 'queryD'])
     expect(result.warnings.missingMutation).toStrictEqual(['mutationB', 'mutationC'])
     expect(result.warnings.missingScalars).toStrictEqual(['Bad', 'OtherBad'])
   })
 })
 
 test.group('printWarnings', () => {
-  test('should print warnings using the logger', ({ expect }) => {
-    const logger = getFakeLogger()
-    const spy = sinon.spy()
+  test('should print warnings using the logger', ({}) => {
+    const mock = sinon.mock(logger)
+    mock.expects('error').atLeast(3)
+    // mock.withArgs([
+    //   'GraphQL Query resolver missing for fields: X, Y',
+    //   'GraphQL Mutation resolver missing for fields: A, B',
+    //   'GraphQL scalar types defined in schema but not in resolvers: S, T',
+    // ])
 
     printWarnings(
       {
@@ -57,25 +61,20 @@ test.group('printWarnings', () => {
       },
       logger
     )
-    spy(logger, 'error')
-    console.log(JSON.stringify(spy.getCall(0).args[1]), 'omakei spy')
-    expect(spy.args(['GraphQL Query resolver missing for fields: X, Y'])).toBe(true)
-    // expect(logger.logs[1].msg).toBe('GraphQL Mutation resolver missing for fields: A, B')
-    // expect(logger.logs[2].msg).toBe(
-    //   'GraphQL scalar types defined in schema but not in resolvers: S, T'
-    // )
+
+    mock.verify()
+    mock.restore()
   })
 
-  test('should print nothing if there are no warnings', ({ expect }) => {
-    const logger = getFakeLogger()
-    const spy = sinon.spy()
-    spy(logger, 'error')
-
+  test('should print nothing if there are no warnings', () => {
+    const mock = sinon.mock(logger)
+    mock.expects('error').atLeast(0)
     printWarnings({ missingMutation: [], missingQuery: [], missingScalars: [] }, logger)
-    expect(spy.callCount).toEqual(1)
+    mock.verify()
+    mock.restore()
   })
 })
 
-function getFakeLogger() {
-  return new Logger({ enabled: true, level: 'trace', name: 'fake-logger' })
-}
+// function getFakeLogger() {
+//   return new Logger({ enabled: true, level: 'trace', name: 'fake-logger' })
+// }

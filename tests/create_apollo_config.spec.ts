@@ -1,8 +1,9 @@
 import { test } from '@japa/runner'
 
-import { ApolloExceptionFormatter } from '../src/types.js'
+import { ApolloConfig, ApolloExceptionFormatter } from '../src/types.js'
 import { defineConfig } from '../index.js'
 import { setupApp } from '../tests_helpers/index.js'
+import { configProvider } from '@adonisjs/core'
 
 class Formatter implements ApolloExceptionFormatter {
   formatError() {
@@ -15,11 +16,11 @@ const { app } = await setupApp()
 app.container.singleton(Formatter, () => new Formatter())
 
 test.group('apollo config', () => {
-  test('create apollo configuration, formatError is callback', ({ expect }) => {
+  test('create apollo configuration, formatError is callback', async ({ expect }) => {
     const config = defineConfig(
       {
-        schemas: 'app/Schemas',
-        resolvers: 'app/Resolvers',
+        schemas: 'app/schemas',
+        resolvers: 'app/resolvers',
         path: '/graphql',
         apolloServer: {
           introspection: true,
@@ -31,9 +32,11 @@ test.group('apollo config', () => {
         fallbackUrl: 'http://localhost:3333',
       }
     )
-    expect(config).toEqual({
-      schemas: 'app/Schemas',
-      resolvers: 'app/Resolvers',
+    const apolloConfig = await configProvider.resolve<ApolloConfig>(app, config)
+
+    expect(apolloConfig).toEqual({
+      schemas: 'app/schemas',
+      resolvers: 'app/resolvers',
       path: '/graphql',
       apolloServer: {
         introspection: true,
@@ -42,11 +45,11 @@ test.group('apollo config', () => {
     })
   })
 
-  test('create apollo configuration, formatError is an IoC dependency', ({ expect }) => {
+  test('create apollo configuration, formatError is an IoC dependency', async ({ expect }) => {
     const config = defineConfig(
       {
-        schemas: 'app/Schemas',
-        resolvers: 'app/Resolvers',
+        schemas: 'app/schemas',
+        resolvers: 'app/resolvers',
         path: '/graphql',
         apolloServer: {
           introspection: true,
@@ -58,9 +61,10 @@ test.group('apollo config', () => {
         fallbackUrl: 'http://localhost:3333',
       }
     )
-    expect(config).toEqual({
-      schemas: 'app/Schemas',
-      resolvers: 'app/Resolvers',
+    const apolloConfig = await configProvider.resolve<ApolloConfig>(app, config)
+    expect(apolloConfig).toEqual({
+      schemas: 'app/schemas',
+      resolvers: 'app/resolvers',
       path: '/graphql',
       apolloServer: {
         introspection: true,
@@ -68,7 +72,7 @@ test.group('apollo config', () => {
       },
     })
     // @ts-expect-error We don't care about the arguments here.
-    expect(config.apolloServer?.formatError()).toEqual({
+    expect(apolloConfig.apolloServer?.formatError()).toEqual({
       message: 'error',
     })
   })
