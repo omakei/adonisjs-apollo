@@ -7,8 +7,6 @@ Apollo GraphQL server for AdonisJS 6.
   <a href="https://www.apollographql.com/a">
     <img src="https://www.apollographql.com/assets/logos/apollo-symbol-regolith.svg" width="50" alt="apollo logo" />
   </a>
-</h3>
-
 
 [![NPM version][npm-image]][npm-url]
 [![build status][ci-image]][ci-url]
