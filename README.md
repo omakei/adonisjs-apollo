@@ -1,115 +1,258 @@
-# AdonisJS package starter kit
+# adonisjs-apollo
 
-> A boilerplate for creating AdonisJS packages
+Apollo GraphQL server for AdonisJS 6.
 
-This repo provides you with a starting point for creating AdonisJS packages. Of course, you can create a package from scratch with your folder structure and workflow. However, using this starter kit can speed up the process, as you have fewer decisions to make.
+<h3 align="center">
 
-## Setup
+  <a href="https://www.apollographql.com/a">
+    <img src="https://www.apollographql.com/assets/logos/apollo-symbol-regolith.svg" width="50" alt="apollo logo" />
+  </a>
 
-- Clone the repo on your computer, or use `giget` to download this repo without the Git history.
-  ```sh
-  npx giget@latest gh:adonisjs/pkg-starter-kit
-  ```
-- Install dependencies.
-- Update the `package.json` file and define the `name`, `description`, `keywords`, and `author` properties.
-- The repo is configured with an MIT license. Feel free to change that if you are not publishing under the MIT license.
 
-## Folder structure
+[![NPM version][npm-image]][npm-url]
+[![build status][ci-image]][ci-url]
+[![Test coverage][codecov-image]][codecov-url]
+[![npm download][download-image]][download-url]
 
-The starter kit mimics the folder structure of the official packages. Feel free to rename files and folders as per your requirements.
+</h3>
 
-```
-├── providers
-├── src
-├── bin
-├── stubs
-├── configure.ts
-├── index.ts
-├── LICENSE.md
-├── package.json
-├── README.md
-├── tsconfig.json
-├── tsnode.esm.js
+> [!WARNING]
+> This module is unstable and in active development. Use at your own risk.
+>
+
+### Disclaimer
+This repository its a fork from `zakodium/adonis-apollo` and its for the purpose of supporting AdonisJs v6 while waiting v6 on the original repository.
+
+## Installation
+
+```console
+npm i @omakei/adonisjs-apollo
+node ace configure @omakei/adonisjs-apollo
 ```
 
-- The `configure.ts` file exports the `configure` hook to configure the package using the `node ace configure` command.
-- The `index.ts` file is the main entry point of the package.
-- The `tsnode.esm.js` file runs TypeScript code using TS-Node + SWC. Please read the code comment in this file to learn more.
-- The `bin` directory contains the entry point file to run Japa tests.
-- Learn more about [the `providers` directory](./providers/README.md).
-- Learn more about [the `src` directory](./src/README.md).
-- Learn more about [the `stubs` directory](./stubs/README.md).
-
-### File system naming convention
-
-We use `snake_case` naming conventions for the file system. The rule is enforced using ESLint. However, turn off the rule and use your preferred naming conventions.
-
-## Peer dependencies
-
-The starter kit has a peer dependency on `@adonisjs/core@6`. Since you are creating a package for AdonisJS, you must make it against a specific version of the framework core.
-
-If your package needs Lucid to be functional, you may install `@adonisjs/lucid` as a development dependency and add it to the list of `peerDependencies`.
-
-As a rule of thumb, packages installed in the user application should be part of the `peerDependencies` of your package and not the main dependency.
-
-For example, if you install `@adonisjs/core` as a main dependency, then essentially, you are importing a separate copy of `@adonisjs/core` and not sharing the one from the user application. Here is a great article explaining [peer dependencies](https://blog.bitsrc.io/understanding-peer-dependencies-in-javascript-dbdb4ab5a7be).
-
-## Published files
-
-Instead of publishing your repo's source code to npm, you must cherry-pick files and folders to publish only the required files.
-
-The cherry-picking uses the `files` property inside the `package.json` file. By default, we publish the following files and folders.
+Then add the following to the `"metaFiles"` array in `.adonisrc.json`:
 
 ```json
 {
-  "files": ["build/src", "build/providers", "build/stubs", "build/index.d.ts", "build/index.js"]
+  "pattern": "app/schemas/*",
+  "reloadServer": true
 }
 ```
 
-If you create additional folders or files, mention them inside the `files` array.
+## Usage
 
-## Exports
+Bind the apollo server to your AdonisJs application.  
+In `start/routes.ts`:
 
-[Node.js Subpath exports](https://nodejs.org/api/packages.html#subpath-exports) allows you to define the exports of your package regardless of the folder structure. This starter kit defines the following exports.
+```ts
+import ApolloServer from '@omakei/adonisjs-apollo/apollo_server'
+import app from '@adonisjs/core/services/app'
 
-```json
-{
-  "exports": {
-    ".": "./build/index.js",
-    "./types": "./build/src/types.js"
+const apollo = await app.container.make(ApolloServer)
+
+apollo.applyMiddleware()
+
+```
+
+### Schema
+
+The GraphQL schema should be defined in `.graphql` files (by default located in `app/schemas`).
+The schema folders are scanned recursively.
+
+```graphql
+type Query {
+  hello: String!
+  rectangle: Rectangle!
+}
+
+type Rectangle {
+  width: Int!
+  height: Int!
+  area: Int!
+}
+```
+
+### Resolvers
+
+Resolvers should be exported from `.ts` files (by default located in `app/resolvers`).
+Only the first level of resolver folders is scanned, so you can use sub-folders put additional code.
+
+All resolvers are merged into a single object, so you can define them in multiple files.
+
+There are two supported ways of defining resolvers:
+
+#### Exporting classes
+
+Multiple classes can be exported from a single file.
+The name of the exported binding will be used as the name of the GraphQL type.
+
+```ts
+export class Query {
+  hello() {
+    return 'world';
+  }
+
+  rectangle() {
+    return { width: 10, height: 20 };
+  }
+}
+
+export class Rectangle {
+  area(rectangle) {
+    return rectangle.width * rectangle.height;
   }
 }
 ```
 
-- The dot `.` export is the main export.
-- The `./types` exports all the types defined inside the `./build/src/types.js` file (the compiled output).
+It is also possible to add the suffix `Resolvers` to the exported name to avoid potential conflicts:
 
-Feel free to change the exports as per your requirements.
+```ts
+interface Rectangle {
+  width: number;
+  height: number;
+}
 
-## Testing
+export class RectangleResolvers {
+  area(rectangle: Rectangle) {
+    return rectangle.width * rectangle.height;
+  }
+}
+```
 
-We configure the [Japa test runner](https://japa.dev/) with this starter kit. Japa is used in AdonisJS applications as well. Just run one of the following commands to execute tests.
+#### Exporting a single object
 
-- `npm run test`: This command will first lint the code using ESlint and then run tests and report the test coverage using [c8](https://github.com/bcoe/c8).
-- `npm run quick:test`: Runs only the tests without linting or coverage reporting.
+When a single object is exported as default, it is assumed to be a map of resolvers.
 
-The starter kit also has a Github workflow file to run tests using Github Actions. The tests are executed against `Node.js 20.x` and `Node.js 21.x` versions on both Linux and Windows. Feel free to edit the workflow file in the `.github/workflows` directory.
+```ts
+interface Rectangle {
+  width: number;
+  height: number;
+}
 
-## TypeScript workflow
+export default {
+  Query: {
+    hello: () => 'world',
+    rectangle() {
+      return { width: 10, height: 20 };
+    },
+  },
+  Rectangle: {
+    area: (rectangle: Rectangle) => rectangle.width * rectangle.height,
+  },
+};
+```
 
-- The starter kit uses [tsc](https://www.typescriptlang.org/docs/handbook/compiler-options.html) for compiling the TypeScript to JavaScript when publishing the package.
-- [TS-Node](https://typestrong.org/ts-node/) and [SWC](https://swc.rs/) are used to run tests without compiling the source code.
-- The `tsconfig.json` file is extended from [`@adonisjs/tsconfig`](https://github.com/adonisjs/tooling-config/tree/main/packages/typescript-config) and uses the `NodeNext` module system. Meaning the packages are written using ES modules.
-- You can perform type checking without compiling the source code using the `npm run type check` script.
+### Troubleshooting
 
-Feel free to explore the `tsconfig.json` file for all the configured options.
+#### Error: Query root type must be provided
 
-## ESLint and Prettier setup
+Apollo requires a query root type to be defined in your schema.
+To fix this error, create a file `app/schemas/some_schema.graphql` with at least
+a `Query` type.
 
-The starter kit configures ESLint and Prettier. Both configurations are stored within the `package.json` file and use our [shared config](https://github.com/adonisjs/tooling-config/tree/main/packages). Feel free to change the configuration, use custom plugins, or remove both tools altogether.
+For example:
 
-## Using Stale bot
+```graphql
+type Query {
+  hello: String!
+}
+```
 
-The [Stale bot](https://github.com/apps/stale) is a Github application that automatically marks issues and PRs as stale and closes after a specific duration of inactivity.
+#### BadRequestError: This operation has been blocked as a potential Cross-Site Request Forgery (CSRF)
 
-Feel free to delete the `.github/stale.yml` and `.github/lock.yml` files if you decide not to use the Stale bot.
+This error may happen if you try to access the GraphQL endpoint from a browser.
+Make sure `forceContentNegotiationTo` is not unconditionally set to `'application/json'` in `config/app.ts`.
+You can either disable this option or set it to a function that ignores the GraphQL route.
+You can also disable the csrf token feature in `config/apollo.ts` using `csrfPrevention: false`.
+
+## Configuration
+
+```ts
+import env from '#start/env'
+import { HttpContext } from '@adonisjs/core/http'
+import { defineConfig } from '@omakei/adonisjs-apollo'
+import app from '@adonisjs/core/services/app'
+
+export default defineConfig(
+  {
+    schemas: 'app/schemas',
+    resolvers: 'app/resolvers',
+    path: '/graphql',
+    async context({ ctx }) {
+      return ctx
+    },
+
+    executableSchema: {
+      inheritResolversFromInterfaces: true,
+    },
+    apolloServer: {
+      csrfPrevention: false,
+    },
+  },
+  { fallbackUrl: env.get('APP_URL'), ioc: app.container }
+)
+```
+
+### Landing page
+
+To configure the default landing page, you can pass `apolloProductionLandingPageOptions`
+or `apolloLocalLandingPageOptions` to the config. Another possibility is to
+override the `plugins` config in `config/apollo.ts`.
+
+The default configuration is:
+
+```ts
+import {
+  ApolloServerPluginLandingPageLocalDefault,
+  ApolloServerPluginLandingPageProductionDefault,
+} from '@apollo/server/plugin/landingPage/default';
+
+const plugins = [
+  Env.get('NODE_ENV') === 'production'
+    ? ApolloServerPluginLandingPageProductionDefault({
+        footer: false,
+        ...apolloProductionLandingPageOptions,
+      })
+    : ApolloServerPluginLandingPageLocalDefault({
+        footer: false,
+        ...apolloLocalLandingPageOptions,
+      }),
+];
+```
+
+See the [Apollo Graphql documentation](https://www.apollographql.com/docs/apollo-server/api/plugin/landing-pages/) to
+learn how to customize or disable the landing page.
+****
+### Scalars
+
+All the resolvers from `graphql-scalars` are installed automatically.
+
+To enable any of the scalar types documented in [`graphql-scalars`](https://www.graphql-scalars.dev/docs/scalars/big-int/),
+for example `DateTime`, just add a scalar line to your schema:
+
+```graphql
+scalar DateTime
+```
+
+### Uploads
+
+To enable support for inline multipart/form-data uploads using [graphql-upload](https://github.com/jaydenseric/graphql-upload):
+
+- Set `enableUploads: true` in `config/apollo.ts`.
+- Update the config of the body parser in `config/bodyparser.ts` by adding your GraphQL route (by default: `/graphql`) to the `multipart.processManually` array.
+- Add the Upload scalar to your schema: `scalar Upload`.
+- Make sure your GraphQL upload client sends the `'Apollo-Require-Preflight'` header, otherwise Apollo will reject multipart requests
+  to prevent [CSRF attacks](https://www.apollographql.com/docs/apollo-server/security/cors/#graphql-upload).
+
+## License
+
+[MIT](./LICENSE)
+
+[npm-image]: https://img.shields.io/npm/v/adonisjs-apollo.svg
+[npm-url]: https://www.npmjs.com/package/adonisjs-apollo
+[ci-image]: https://github.com/omakei/adonisjs-apollo/workflows/Node.js%20CI/badge.svg?branch=main
+[ci-url]: https://github.com/omakei/adonisjs-apollo/actions?query=workflow%3A%22Node.js+CI%22
+[codecov-image]: https://img.shields.io/codecov/c/github/omakei/adonisjs-apollo.svg
+[codecov-url]: https://codecov.io/gh/omakei/adonisjs-apollo
+[download-image]: https://img.shields.io/npm/dm/adonisjs-apollo.svg
+[download-url]: https://www.npmjs.com/package/adonisjs-apollo
