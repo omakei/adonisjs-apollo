@@ -250,8 +250,8 @@ To enable support for inline multipart/form-data uploads using [graphql-upload](
 
 [npm-image]: https://img.shields.io/npm/v/adonisjs-apollo.svg
 [npm-url]: https://www.npmjs.com/package/adonisjs-apollo
-[ci-image]: https://github.com/omakei/adonisjs-apollo/workflows/Node.js%20CI/badge.svg?branch=main
-[ci-url]: https://github.com/omakei/adonisjs-apollo/actions?query=workflow%3A%22test%22
+[ci-image]: https://github.com/omakei/adonisjs-apollo/workflows/test/badge.svg?branch=main
+[ci-url]: https://github.com/omakei/adonisjs-apollo/actions?query=workflow:%22test%22
 [codecov-image]: https://img.shields.io/codecov/c/github/omakei/adonisjs-apollo.svg
 [codecov-url]: https://codecov.io/gh/omakei/adonisjs-apollo
 [download-image]: https://img.shields.io/npm/dm/adonisjs-apollo.svg
